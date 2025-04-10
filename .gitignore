@@ -1,0 +1,30 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+terraform.tfvars
+
+# Ansible logs & temp
+*.log
+*.retry
+*.bak
+ansible/ansible_detailed.log
+ansible/ansible_run_output.log
+
+# SSH keys
+*.pem
+*.pub
+*.key
+*.crt
+.ssh/
+id_*
+
+# Python
+__pycache__/
+*.pyc
+
+# Altri
+*.swp
+.DS_Store
+.env

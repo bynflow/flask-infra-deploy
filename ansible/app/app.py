@@ -5,7 +5,10 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return 'Questa è una WSGI application amministrata da Flask.'
+    return '''
+        <h1>Benvenuto nella Flask App!</h1>
+        <p><a href="/calcola">Vai alla pagina per calcolare il quadrato</a></p>
+    '''
 
 
 @app.route('/ping')

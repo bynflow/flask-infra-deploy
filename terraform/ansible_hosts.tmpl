@@ -1,0 +1,4 @@
+%{ for i, ip in ips ~}
+flask-${i} ansible_host=${ip}
+%{ endfor ~}
+

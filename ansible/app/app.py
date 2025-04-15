@@ -1,13 +1,19 @@
 from flask import Flask, request, render_template
+import os
+
 
 app = Flask(__name__)
 
 
 @app.route('/')
 def index():
-    return '''
+    container = os.environ.get('CONTAINER_NAME', 'unknown')
+    public_ip = os.environ.get('PUBLIC_IP', 'not_set')
+    return f'''
         <h1>Benvenuto nella Flask App!</h1>
         <p><a href="/calcola">Vai alla pagina per calcolare il quadrato</a></p>
+        <p><strong>Hello from container:</strong> {container}</p>
+        <p><strong>Public IP:</strong> {public_ip}</p>
     '''
 
 

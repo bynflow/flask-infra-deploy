@@ -32,11 +32,20 @@
 
     - name: Costruire l'immagine Docker
       command: docker build -t flask_app /root/ansible/
-      register: docker_install_status 
+      register: docker_install_status
+
+    - name: Ottieni IP pubblico del server
+      shell: curl -s http://ipinfo.io/ip
+      register: public_ip_result
 
     - name: Avviare il container Docker
       loop: "{{ range(0, container_count) | list }}"
-      command: docker run -d -p {{ base_port + item }}:5000 --name flask_app_{{ item }} flask_app
+      command: >
+        docker run -d -p {{ base_port + item }}:5000
+        --name flask_app_{{ item }}
+        -e CONTAINER_NAME=flask_app_{{ item }}
+        -e PUBLIC_IP={{ ansible_host }}
+        flask_app
       when: docker_install_status.rc == 0
 
 

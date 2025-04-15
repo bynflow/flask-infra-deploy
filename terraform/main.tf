@@ -79,17 +79,18 @@ provisioner "file" {
 resource "null_resource" "generate_inventory" {
   depends_on = [hcloud_server.devops_vm]
 
-  provisioner "remote-exec" {
+  provisioner "file" {
+    content     = templatefile("${path.module}/ansible_hosts.tmpl", {
+      ips = hcloud_server.devops_vm[*].ipv4_address
+    })
+    destination = "/root/ansible_hosts"
+
     connection {
-      type = "ssh"
-      user = "root"
+      type        = "ssh"
+      user        = "root"
       private_key = file("~/.ssh/id_ed25519")
-      host = hcloud_server.devops_vm[0].ipv4_address
+      host        = hcloud_server.devops_vm[0].ipv4_address
     }
-    
-    inline = [
-      "echo '${join("\n", hcloud_server.devops_vm[*].ipv4_address)}' > /root/ansible_hosts"
-    ]
   }
 }
 
@@ -134,4 +135,24 @@ resource "null_resource" "run_ansible" {
     ]
   }
 }
+
+# Lanciare HAProxy dall'omonimo playbook ansible solo su flask-server-0 e dopo "run_ansible"
+resource "null_resource" "run_haproxy" {
+  depends_on = [null_resource.run_ansible]
+
+  provisioner "remote-exec" {
+    connection {
+      type        = "ssh"
+      user        = "root"
+      private_key = file("~/.ssh/id_ed25519")
+      host        = hcloud_server.devops_vm[0].ipv4_address
+      timeout     = "30m"
+    }
+
+    inline = [
+      "ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i /root/ansible_hosts /root/ansible/haproxy.yml -vvvv > /root/ansible/haproxy_run.log 2>&1"
+    ]
+  }
+}
+
 

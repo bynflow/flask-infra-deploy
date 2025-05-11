@@ -114,10 +114,10 @@ flask-infra-deploy/
 
 ## 🧠 Author
 
-This project is part of a practical DevOps learning path and portfolio development.
+**Carlo Capobianchi** (bynflow)  
+*Year: 2025*
 
-Author: Carlo Capobianchi (bynflow)  
-Year: 2025
+This project is part of a practical DevOps learning path and portfolio development.
 
 
 

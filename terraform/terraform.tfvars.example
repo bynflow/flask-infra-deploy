@@ -1,8 +1,10 @@
 # terraform.tfvars.example
-# Virgolette e parentesi vanno lasciate ove non venga esplicitamente indicato il contrario
-hcloud_token     = "inserisci-il-tuo-token-Hetzner-qui"
-ssh_key_name     = ["nome_chiave_ssh_nel_profilo_Hetzner"]
-location         = "Zona_del_server"
-server_type      = "Tipo_di_server"
-image            = "Immagine_SO"
-count_x          = [numero-di-server] # Senza le parentesi
+# Keep quotes and brackets unless otherwise noted
+
+hcloud_token     = "insert-your-Hetzner-token-here"
+ssh_key_name     = ["your_ssh_key_name_in_Hetzner"]
+location         = "server_zone"
+server_type      = "server_type"
+image            = "os_image"
+count_x          = [number_of_servers] # no brackets here
+

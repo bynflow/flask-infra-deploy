@@ -19,6 +19,10 @@ defaults
 
 frontend http_front
     bind *:80
+    redirect scheme https code 301 if !{ ssl_fc }
+
+frontend https_front
+    bind *:443 ssl crt /etc/ssl/haproxy/haproxy.pem
     default_backend flask_back
 
 backend flask_back

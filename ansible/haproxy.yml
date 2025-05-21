@@ -1,4 +1,4 @@
-- name: Configura HAProxy come Load Balancer
+- name: Configure HAProxy as Load Balancer
   hosts: 127.0.0.1
   become: yes
   vars:
@@ -6,13 +6,16 @@
     haproxy_cfg_dest: /etc/haproxy/haproxy.cfg
 
   tasks:
-    - name: Installa HAProxy
+    - name: Install HAProxy
       apt:
         name: haproxy
         state: present
         update_cache: yes
 
-    - name: Copia il file di configurazione da template
+    - name: Generate self-signed certificate
+      import_tasks: tasks/generate_selfsigned_cert.yml
+
+    - name: Copy HAProxy config from template
       template:
         src: "{{ haproxy_cfg_template }}"
         dest: "{{ haproxy_cfg_dest }}"
@@ -20,9 +23,9 @@
         group: root
         mode: '0644'
 
-    - name: Riavvia il servizio HAProxy
+  handlers:
+    - name: Restart HAProxy
       service:
         name: haproxy
         state: restarted
-        enabled: yes
 

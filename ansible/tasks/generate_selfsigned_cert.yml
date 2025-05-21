@@ -1,0 +1,22 @@
+- name: Create directory for certificates
+  file:
+    path: /etc/ssl/haproxy
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Generate self-signed certificate
+  command: >
+    openssl req -x509 -nodes -days 365
+    -subj "/C=DE/ST=Berlin/L=Berlin/O=Demo/CN=demo.local"
+    -newkey rsa:2048
+    -keyout /etc/ssl/haproxy/haproxy.key
+    -out /etc/ssl/haproxy/haproxy.crt
+  args:
+    creates: /etc/ssl/haproxy/haproxy.crt
+
+- name: Combine key and certificate into .pem file
+  shell: cat /etc/ssl/haproxy/haproxy.key /etc/ssl/haproxy/haproxy.crt > /etc/ssl/haproxy/haproxy.pem
+  notify: Restart HAProxy
+

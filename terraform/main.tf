@@ -1,7 +1,7 @@
 /*
-Questo file di configurazione crea un numero 'x' di server (il valore di 'count_x' è nel file con estensione '.tfvars').
-In ciascuno di questi server Ansible, lanciato dal primo server-0, il controller, eseguirà docker il quale attraverso un
-Dockerfile installerà uno o più container.
+This configuration file provisions a variable number 'x' of servers (the value of 'count_x' is defined in the '.tfvars' file).
+On each server, Ansible — triggered from the first server (server-0, acting as the controller) — installs Docker,
+which in turn builds and runs one or more containers using the provided Dockerfile.
 */
 
 terraform {
@@ -18,7 +18,7 @@ provider "hcloud" {
 }
 
 resource "hcloud_server" "devops_vm" {
-  count	      = var.count_x
+  count       = var.count_x
   name        = "flask-server-${count.index}"
   image       = var.image
   server_type = var.server_type
@@ -29,53 +29,53 @@ resource "hcloud_server" "devops_vm" {
     ipv4_enabled = true
     ipv6_enabled = false
   }
-    
-  connection  {
-    type	= "ssh"
-    user	= "root"
-    private_key	= file("~/.ssh/id_ed25519")
-    host	= self.ipv4_address
+
+  connection {
+    type        = "ssh"
+    user        = "root"
+    private_key = file("~/.ssh/id_ed25519")
+    host        = self.ipv4_address
   }
 
-# Copia della cartella Ansible su tutti i server
-provisioner "file" {
+  # Copy the Ansible folder to all servers
+  provisioner "file" {
     source      = "../ansible"
     destination = "/root/"
     connection {
-      type = "ssh"
-      user = "root"
+      type        = "ssh"
+      user        = "root"
       private_key = file("~/.ssh/id_ed25519")
-      host = self.ipv4_address
+      host        = self.ipv4_address
     }
   }
 
-  # Copia della chiave privata su ogni server per autenticazione SSH da Ansible
+  # Copy SSH private key to each server for Ansible to connect
   provisioner "file" {
     source      = "~/.ssh/id_ed25519"
     destination = "/root/.ssh/id_ed25519"
     connection {
-      type = "ssh"
-      user = "root"
+      type        = "ssh"
+      user        = "root"
       private_key = file("~/.ssh/id_ed25519")
-      host = self.ipv4_address
+      host        = self.ipv4_address
     }
   }
 
-  provisioner "remote-exec"  {
-    inline  =  [
+  provisioner "remote-exec" {
+    inline = [
       "if [ ${count.index} -eq 0 ]; then chmod 600 /root/.ssh/id_ed25519; fi"
     ]
   }
 
-  # Installare Ansible (i pacchetti python3, python3-pip e pip3 sono tuttavia necessari ad ansible su ogni server target) su flask-server-0
-  provisioner "remote-exec"  {
-    inline  =  [
+  # Install Ansible on flask-server-0 (requires python3, pip3 on all target machines)
+  provisioner "remote-exec" {
+    inline = [
       "if [ ${count.index} -eq 0 ]; then apt update -y; apt install -y python3 python3-pip; pip3 install --break-system-packages ansible; ansible --version > /root/ansible_version.log; fi"
     ]
   }
 }
 
-# Creiamo un `null_resource` per generare l'inventario
+# Generate inventory file dynamically
 resource "null_resource" "generate_inventory" {
   depends_on = [hcloud_server.devops_vm]
 
@@ -94,7 +94,7 @@ resource "null_resource" "generate_inventory" {
   }
 }
 
-# Creazione del file known_hosts
+# Generate known_hosts file to avoid SSH prompts
 resource "null_resource" "generate_known_hosts" {
   depends_on = [hcloud_server.devops_vm]
 
@@ -105,7 +105,7 @@ resource "null_resource" "generate_known_hosts" {
       private_key = file("~/.ssh/id_ed25519")
       host        = hcloud_server.devops_vm[0].ipv4_address
     }
-    
+
     inline = [
       "mkdir -p /root/.ssh",
       "chmod 700 /root/.ssh",
@@ -116,7 +116,7 @@ resource "null_resource" "generate_known_hosts" {
   }
 }
 
-# Lanciare Ansible solo su flask-server-0
+# Run Ansible from server-0
 resource "null_resource" "run_ansible" {
   depends_on = [null_resource.generate_known_hosts]
 
@@ -128,15 +128,15 @@ resource "null_resource" "run_ansible" {
       host        = hcloud_server.devops_vm[0].ipv4_address
       timeout     = "30m"
     }
-    
+
     inline = [
       "chmod -R 755 /root/ansible",
-      "ANSIBLE_HOST_KEY_CHECKING=False ANSIBLE_LOG_PATH=/root/ansible/ansible_detailed.log ansible-playbook -i /root/ansible_hosts -u root --private-key=/root/.ssh/id_ed25519 /root/ansible/playbook.yml -vvvv > /root/ansible/ansible_run_output.log 2>&1"
+      "ANSIBLE_HOST_KEY_CHECKING=False ANSIBLE_LOG_PATH=/root/ansible/ansible_detailed.log ansible-playbook -i /root/ansible_hosts -u root --private-key=/root/.ssh/id_ed25519 /root/ansible/deploy_flask_app.yml -vvvv > /root/ansible/ansible_run_output.log 2>&1"
     ]
   }
 }
 
-# Lanciare HAProxy dall'omonimo playbook ansible solo su flask-server-0 e dopo "run_ansible"
+# Run HAProxy playbook from server-0 (after the app is deployed)
 resource "null_resource" "run_haproxy" {
   depends_on = [null_resource.run_ansible]
 
@@ -154,5 +154,4 @@ resource "null_resource" "run_haproxy" {
     ]
   }
 }
-
 

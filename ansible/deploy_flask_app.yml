@@ -1,0 +1,77 @@
+# deploy_flask_app.yml
+
+- name: Deploy Flask App with Docker
+  hosts: all
+  become: yes
+  gather_facts: no
+
+  vars:
+    container_count: 3       # Number of containers per server
+    base_port: 5000          # Starting port number
+
+  tasks:
+    - name: Update package list and upgrade packages
+      apt:
+        update_cache: true
+        upgrade: dist
+
+    - name: Set permissions on Ansible directory
+      file:
+        path: /root/ansible
+        recurse: yes
+        mode: '0755'
+
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Start Docker service
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Build Docker image for Flask App
+      command: docker build -t flask_app /root/ansible/
+      register: docker_install_status
+
+    - name: Get public IP of server
+      shell: curl -s http://ipinfo.io/ip
+      register: public_ip_result
+
+    - name: Launch Flask containers
+      loop: "{{ range(0, container_count) | list }}"
+      command: >
+        docker run -d -p {{ base_port + item }}:5000
+        --name flask_app_{{ item }}
+        -e CONTAINER_NAME=flask_app_{{ item }}
+        -e PUBLIC_IP={{ ansible_host }}
+        flask_app
+      when: docker_install_status.rc == 0
+
+    - name: Wait for Flask containers to be available
+      wait_for:
+        port: "{{ base_port + item }}"
+        host: "{{ ansible_host }}"
+        delay: 5
+        timeout: 20
+        state: started
+      loop: "{{ range(0, container_count) | list }}"
+      register: wait_results
+
+    - name: Check application health via HTTP
+      uri:
+        url: "http://{{ ansible_host }}:{{ base_port + item }}"
+        return_content: yes
+        status_code: 200
+      loop: "{{ range(0, container_count) | list }}"
+      register: http_check_results
+
+    - name: Assert successful deployment
+      assert:
+        that:
+          - "http_check_results.results[item].status == 200"
+        fail_msg: "App failed on port {{ base_port + item }} of host {{ ansible_host }}"
+        success_msg: "App is healthy on port {{ base_port + item }} of host {{ ansible_host }}"
+      loop: "{{ range(0, container_count) | list }}"

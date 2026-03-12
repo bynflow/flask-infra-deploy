@@ -33,7 +33,7 @@ This project provisions a scalable multi-node infrastructure on Hetzner Cloud us
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/<your-username>/flask-infra-deploy.git
+git clone https://github.com/bynflow/flask-infra-deploy.git
 cd flask-infra-deploy
 ```
 

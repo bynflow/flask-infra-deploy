@@ -1,4 +1,8 @@
-# Flask Infrastructure Deployment with Terraform, Ansible, Docker and HAProxy
+# Infrastructure Automation: Terraform → Ansible → Docker → HAProxy
+
+Production-style infrastructure deployment on Hetzner Cloud using Terraform and Ansible, running a containerized Flask application behind an HAProxy load balancer across multiple nodes.
+
+**Stack:** Terraform · Ansible · Docker · HAProxy · Flask · Hetzner Cloud · Linux
 
 This project provisions a scalable multi-node infrastructure on Hetzner Cloud using **Terraform**, and configures it with **Ansible** to deploy a **Flask** application in **Docker** containers across multiple virtual machines. An **HAProxy** instance is used to load balance HTTP/HTTPS requests to all running containers across nodes.
 
